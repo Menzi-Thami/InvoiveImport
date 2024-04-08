@@ -2,13 +2,15 @@
 using InvoiceImporter.Domain;
 using InvoiceImporter.Infrastructure;
 using System;
-using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using InvoiceImporter.Domain.Services; // Add this namespace
 
 namespace InvoiceImporter
 {
     class Program
     {
-        static void Main(string[] args)
+        static async Task Main(string[] args)
         {
             try
             {
@@ -28,10 +30,12 @@ namespace InvoiceImporter
                 {
                     var repository = new InvoiceRepository(dbContext);
                     var logger = new ConsoleLogger();
-                    var dataImporter = new DataImporter(repository, new InvoiceFactory(), logger);
+                    var dateTimeParser = new DateTimeParser(); // Instantiate DateTimeParser
+                    var invoiceFactory = new InvoiceFactory(dateTimeParser); // Pass DateTimeParser to InvoiceFactory
+                    var dataImporter = new DataImporter(csvReader, logger, repository, invoiceFactory);
 
                     // Import data
-                    dataImporter.ImportData(csvData);
+                    await dataImporter.ImportData(filePath);
                 }
             }
             catch (Exception ex)

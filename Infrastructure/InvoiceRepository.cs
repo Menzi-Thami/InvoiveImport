@@ -1,5 +1,5 @@
-﻿using InvoiceImporter.Domain;
-using Microsoft.EntityFrameworkCore;
+﻿// InvoiceRepository.cs
+using InvoiceImporter.Domain;
 using System.Linq;
 
 namespace InvoiceImporter.Infrastructure
@@ -15,18 +15,13 @@ namespace InvoiceImporter.Infrastructure
 
         public bool InvoiceExists(string invoiceNumber)
         {
-            return _context.Invoices.Any(h => h.InvoiceNumber == invoiceNumber);
+            return _context.InvoiceHeaders.Any(h => h.InvoiceNumber == invoiceNumber);
         }
 
-        public void AddInvoice(Invoice invoice)
+        public void AddInvoice(InvoiceHeader invoice)
         {
-            _context.Invoices.Add(invoice);
-            _context.InvoiceLines.AddRange(invoice.Lines); 
-        }
-
-        public double GetInvoiceLinesTotal()
-        {
-            return _context.InvoiceLines.Sum(line => line.Quantity * line.UnitPrice);
+            _context.InvoiceHeaders.Add(invoice);
+            _context.InvoiceLines.AddRange(invoice.Lines);
         }
 
         public void SaveChanges()

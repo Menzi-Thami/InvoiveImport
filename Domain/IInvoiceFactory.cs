@@ -2,6 +2,6 @@
 {
     public interface IInvoiceFactory
     {
-        Invoice CreateInvoice(string[] csvRow);
+        InvoiceHeader CreateInvoice(string[] csvRow);
     }
 }

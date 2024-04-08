@@ -3,8 +3,7 @@
     public interface IInvoiceRepository
     {
         bool InvoiceExists(string invoiceNumber);
-        void AddInvoice(Invoice invoice);
-        double GetInvoiceLinesTotal();
+        void AddInvoice(InvoiceHeader invoice);
         void SaveChanges();
     }
 }

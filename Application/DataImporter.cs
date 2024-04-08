@@ -3,26 +3,35 @@ using InvoiceImporter.Infrastructure;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace InvoiceImporter.Application
 {
     public class DataImporter : IDataImporter
     {
+        private readonly ICsvReader _csvReader;
+        private readonly ILogger _logger;
         private readonly IInvoiceRepository _invoiceRepository;
         private readonly IInvoiceFactory _invoiceFactory;
-        private readonly ILogger _logger;
 
-        public DataImporter(IInvoiceRepository invoiceRepository, IInvoiceFactory invoiceFactory, ILogger logger)
+        public DataImporter(ICsvReader csvReader, ILogger logger, IInvoiceRepository invoiceRepository, IInvoiceFactory invoiceFactory)
         {
+            _csvReader = csvReader;
+            _logger = logger;
             _invoiceRepository = invoiceRepository;
             _invoiceFactory = invoiceFactory;
-            _logger = logger;
         }
 
-        public void ImportData(List<string[]> csvData)
+        public async Task ImportData(string filePath)
         {
             try
             {
+                _logger.Log("Reading CSV file...");
+
+                List<string[]> csvData = _csvReader.ReadCsv(filePath);
+
+                _logger.Log("Importing data from CSV...");
+
                 foreach (var row in csvData.Skip(1)) // Skip header row
                 {
                     var invoiceNumber = row[0];
@@ -35,32 +44,16 @@ namespace InvoiceImporter.Application
                     var invoice = _invoiceFactory.CreateInvoice(row);
                     _invoiceRepository.AddInvoice(invoice);
 
-                    _logger.Log($"Invoice {invoiceNumber} imported. Total Amount: {invoice.CalculateTotalAmount()}");
+                    _logger.Log($"Invoice {invoiceNumber} imported.");
                 }
 
                 _invoiceRepository.SaveChanges();
 
-                // Check data integrity
-                CheckDataIntegrity(csvData);
+                _logger.Log("Data import completed successfully.");
             }
             catch (Exception ex)
             {
                 _logger.Log($"An error occurred: {ex.Message}");
-            }
-        }
-
-        private void CheckDataIntegrity(List<string[]> csvData)
-        {
-            var expectedTotal = csvData.Skip(1).Sum(row => double.Parse(row[5]) * double.Parse(row[6]));
-            var actualTotal = _invoiceRepository.GetInvoiceLinesTotal();
-
-            if (Math.Abs(expectedTotal - actualTotal) < 0.01)
-            {
-                _logger.Log($"Data integrity check passed. Expected total: {expectedTotal}, Actual total: {actualTotal}");
-            }
-            else
-            {
-                _logger.Log($"Data integrity check failed. Expected total: {expectedTotal}, Actual total: {actualTotal}");
             }
         }
     }

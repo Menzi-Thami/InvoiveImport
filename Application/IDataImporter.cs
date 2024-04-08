@@ -1,9 +1,9 @@
-﻿using System.Collections.Generic;
+﻿using System.Threading.Tasks;
 
 namespace InvoiceImporter.Application
 {
     public interface IDataImporter
     {
-        void ImportData(List<string[]> csvData);
+        Task ImportData(string filePath);
     }
 }

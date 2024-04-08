@@ -1,4 +1,5 @@
 ﻿using CSVFile;
+using System;
 using System.Collections.Generic;
 
 namespace InvoiceImporter.Infrastructure
@@ -7,26 +8,31 @@ namespace InvoiceImporter.Infrastructure
     {
         public List<string[]> ReadCsv(string filePath)
         {
-            var result = new List<string[]>();
-
-            // Custom CSV settings
-            var settings = new CSVSettings()
+            try
             {
-                FieldDelimiter = ',',
-                TextQualifier = '"',
-                ForceQualifiers = true
-            };
+                var result = new List<string[]>();
 
-            // Use asynchronous I/O to stream CSV data off disk
-            using (var cr = CSVReader.FromFile(filePath, settings))
-            {
-                foreach (string[] line in cr)
+                var settings = new CSVSettings()
                 {
-                    result.Add(line);
-                }
-            }
+                    FieldDelimiter = ',',
+                    TextQualifier = '"',
+                    ForceQualifiers = true
+                };
 
-            return result;
+                using (var cr = CSVReader.FromFile(filePath, settings))
+                {
+                    foreach (string[] line in cr)
+                    {
+                        result.Add(line);
+                    }
+                }
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Error reading CSV file: {ex.Message}");
+            }
         }
     }
 }
