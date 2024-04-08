@@ -24,14 +24,14 @@ namespace InvoiceImporter.Domain
 
             var invoice = new InvoiceHeader
             {
-                InvoiceNumber = csvRow[0], // Assuming invoice number is in the first column
+                InvoiceNumber = csvRow[0], 
                 InvoiceDate = invoiceDate,
-                Address = csvRow[2], // Assuming address is in the third column
-                InvoiceTotal = ParseDouble(csvRow[3]), // Assuming invoice total is in the fourth column
+                Address = csvRow[2], 
+                InvoiceTotal = ParseDouble(csvRow[3]), 
                 Lines = new List<InvoiceLine>()
             };
 
-            // Assuming each line contains three columns: Description, Quantity, UnitPrice
+           //interate three columns: Description, Quantity, UnitPrice, interation 
             for (int i = 4; i < csvRow.Length; i += 3)
             {
                 var line = new InvoiceLine
