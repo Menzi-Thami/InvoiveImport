@@ -13,6 +13,6 @@ namespace InvoiceImporter.Domain
         public string Description { get; set; }
         public double? Quantity { get; set; }
         public double? UnitSellingPriceExVAT { get; set; }
-        public InvoiceHeader Invoice { get; set; } // Navigation property
+        public InvoiceHeader Invoice { get; set; } 
     }
 }
