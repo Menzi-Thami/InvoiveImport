@@ -1,6 +1,7 @@
-﻿using CSVFile;
 using System;
 using System.Collections.Generic;
+using CSVFile;
+using InvoiceImporter.Application;
 
 namespace InvoiceImporter.Infrastructure
 {
@@ -8,6 +9,11 @@ namespace InvoiceImporter.Infrastructure
     {
         public List<string[]> ReadCsv(string filePath)
         {
+            if (string.IsNullOrWhiteSpace(filePath))
+            {
+                throw new ArgumentException("A CSV file path is required.", nameof(filePath));
+            }
+
             try
             {
                 var result = new List<string[]>();
@@ -31,7 +37,7 @@ namespace InvoiceImporter.Infrastructure
             }
             catch (Exception ex)
             {
-                throw new Exception($"Error reading CSV file: {ex.Message}");
+                throw new CsvReadException($"Error reading CSV file '{filePath}'.", ex);
             }
         }
     }

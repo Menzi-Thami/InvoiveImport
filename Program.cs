@@ -1,46 +1,45 @@
-﻿using InvoiceImporter.Application;
-using InvoiceImporter.Domain;
-using InvoiceImporter.Infrastructure;
 using System;
-using System.Linq;
 using System.Threading.Tasks;
-using InvoiceImporter.Domain.Services; // Add this namespace
+using InvoiceImporter.Application;
+using InvoiceImporter.Domain;
+using InvoiceImporter.Domain.Services;
+using InvoiceImporter.Infrastructure;
 
 namespace InvoiceImporter
 {
+    /// <summary>
+    /// Composition root: reads the file path, wires the dependencies, and runs the import.
+    /// </summary>
     class Program
     {
         static async Task Main(string[] args)
         {
             try
             {
-                // Prompt user for CSV file path
                 Console.Write("Enter the file path of the CSV file: ");
-                string filePath = Console.ReadLine();
+                string? input = Console.ReadLine();
 
-                // Replace special characters in the file path
-                filePath = filePath.Replace("\"", "").Replace("\\", "\\\\");
-
-                // Read CSV data
-                var csvReader = new CsvReader();
-                var csvData = csvReader.ReadCsv(filePath);
-
-                // Configure DbContext and Repository
-                using (var dbContext = new InvoiceDbContext())
+                if (string.IsNullOrWhiteSpace(input))
                 {
-                    var repository = new InvoiceRepository(dbContext);
-                    var logger = new ConsoleLogger();
-                    var dateTimeParser = new DateTimeParser(); // Instantiate DateTimeParser
-                    var invoiceFactory = new InvoiceFactory(dateTimeParser); // Pass DateTimeParser to InvoiceFactory
-                    var dataImporter = new DataImporter(csvReader, logger, repository, invoiceFactory);
-
-                    // Import data
-                    await dataImporter.ImportData(filePath);
+                    throw new ArgumentException("No file path was entered.");
                 }
+
+                // Strip quotes added by "Copy as path" and normalise separators.
+                string filePath = input.Replace("\"", "").Replace("\\", "\\\\");
+
+                using var dbContext = new InvoiceDbContext();
+
+                var csvReader = new CsvReader();
+                var logger = new ConsoleLogger();
+                var repository = new InvoiceRepository(dbContext);
+                var dateTimeParser = new DateTimeParser();
+                var invoiceFactory = new InvoiceFactory(dateTimeParser);
+                var dataImporter = new DataImporter(csvReader, logger, repository, invoiceFactory);
+
+                await dataImporter.ImportData(filePath);
             }
             catch (Exception ex)
             {
-                // Handle and display any exceptions
                 Console.ForegroundColor = ConsoleColor.Red;
                 Console.WriteLine($"An error occurred: {ex.Message}");
                 Console.ResetColor();
