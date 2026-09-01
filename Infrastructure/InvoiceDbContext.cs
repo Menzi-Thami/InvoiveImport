@@ -23,7 +23,10 @@ namespace InvoiceImporter.Infrastructure
         {
             if (!optionsBuilder.IsConfigured)
             {
-                optionsBuilder.UseSqlServer("Server=10.0.1.199;Database=Guidelines;Integrated Security=true;");
+                // Connection string is resolved from configuration at runtime
+                // (environment variables / user-secrets / appsettings.json) and is
+                // never hardcoded here.
+                optionsBuilder.UseSqlServer(InvoiceDbConfiguration.GetConnectionString());
             }
         }
 
