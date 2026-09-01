@@ -1,18 +1,51 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
-using System.ComponentModel.DataAnnotations;
+using System;
+using System.Collections.Generic;
 
 namespace InvoiceImporter.Domain
 {
+    /// <summary>
+    /// Invoice aggregate root. Plain C# domain type — no EF or CSV concerns.
+    /// Persistence mapping lives in Infrastructure (Fluent API); parsing lives in the factory.
+    /// </summary>
     public class InvoiceHeader
     {
-        [Key]
-        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public int InvoiceId { get; set; }
-        public string InvoiceNumber { get; set; }
-        public DateTime? InvoiceDate { get; set; }
-        public string Address { get; set; }
-        public double? InvoiceTotal { get; set; }
+        // Parameterless constructor for the EF Core materialiser only.
+        private InvoiceHeader()
+        {
+            InvoiceNumber = string.Empty;
+            Address = string.Empty;
+        }
 
-        public List<InvoiceLine> Lines { get; set; } = new List<InvoiceLine>();
+        public InvoiceHeader(string invoiceNumber, DateTime? invoiceDate, string address, double? invoiceTotal)
+        {
+            if (string.IsNullOrWhiteSpace(invoiceNumber))
+            {
+                throw new ArgumentException("Invoice number is required.", nameof(invoiceNumber));
+            }
+
+            InvoiceNumber = invoiceNumber;
+            InvoiceDate = invoiceDate;
+            Address = address ?? string.Empty;
+            InvoiceTotal = invoiceTotal;
+        }
+
+        public int InvoiceId { get; private set; }
+        public string InvoiceNumber { get; private set; }
+        public DateTime? InvoiceDate { get; private set; }
+        public string Address { get; private set; }
+        public double? InvoiceTotal { get; private set; }
+
+        private readonly List<InvoiceLine> _lines = new();
+        public IReadOnlyList<InvoiceLine> Lines => _lines;
+
+        public void AddLine(InvoiceLine line)
+        {
+            if (line is null)
+            {
+                throw new ArgumentNullException(nameof(line));
+            }
+
+            _lines.Add(line);
+        }
     }
 }

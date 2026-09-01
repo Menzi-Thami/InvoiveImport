@@ -1,9 +1,7 @@
-﻿using InvoiceImporter.Domain;
-using InvoiceImporter.Infrastructure;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using InvoiceImporter.Domain;
 
 namespace InvoiceImporter.Application
 {
@@ -22,39 +20,34 @@ namespace InvoiceImporter.Application
             _invoiceFactory = invoiceFactory;
         }
 
-        public async Task ImportData(string filePath)
+        public Task ImportData(string filePath)
         {
-            try
+            _logger.Log("Reading CSV file...");
+
+            List<string[]> csvData = _csvReader.ReadCsv(filePath);
+
+            _logger.Log("Importing data from CSV...");
+
+            foreach (var row in csvData.Skip(1)) // Skip header row
             {
-                _logger.Log("Reading CSV file...");
-
-                List<string[]> csvData = _csvReader.ReadCsv(filePath);
-
-                _logger.Log("Importing data from CSV...");
-
-                foreach (var row in csvData.Skip(1)) // Skip header row
+                var invoiceNumber = row[0];
+                if (_invoiceRepository.InvoiceExists(invoiceNumber))
                 {
-                    var invoiceNumber = row[0];
-                    if (_invoiceRepository.InvoiceExists(invoiceNumber))
-                    {
-                        _logger.Log($"Invoice {invoiceNumber} already exists. Skipping...");
-                        continue;
-                    }
-
-                    var invoice = _invoiceFactory.CreateInvoice(row);
-                    _invoiceRepository.AddInvoice(invoice);
-
-                    _logger.Log($"Invoice {invoiceNumber} imported.");
+                    _logger.Log($"Invoice {invoiceNumber} already exists. Skipping...");
+                    continue;
                 }
 
-                _invoiceRepository.SaveChanges();
+                var invoice = _invoiceFactory.CreateInvoice(row);
+                _invoiceRepository.AddInvoice(invoice);
 
-                _logger.Log("Data import completed successfully.");
+                _logger.Log($"Invoice {invoiceNumber} imported.");
             }
-            catch (Exception ex)
-            {
-                _logger.Log($"An error occurred: {ex.Message}");
-            }
+
+            _invoiceRepository.SaveChanges();
+
+            _logger.Log("Data import completed successfully.");
+
+            return Task.CompletedTask;
         }
     }
 }
