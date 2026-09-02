@@ -1,6 +1,4 @@
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using InvoiceImporter.Domain;
 
 namespace InvoiceImporter.Application
@@ -8,11 +6,15 @@ namespace InvoiceImporter.Application
     public class DataImporter : IDataImporter
     {
         private readonly ICsvReader _csvReader;
-        private readonly ILogger _logger;
+        private readonly ILogger<DataImporter> _logger;
         private readonly IInvoiceRepository _invoiceRepository;
         private readonly IInvoiceFactory _invoiceFactory;
 
-        public DataImporter(ICsvReader csvReader, ILogger logger, IInvoiceRepository invoiceRepository, IInvoiceFactory invoiceFactory)
+        public DataImporter(
+            ICsvReader csvReader,
+            ILogger<DataImporter> logger,
+            IInvoiceRepository invoiceRepository,
+            IInvoiceFactory invoiceFactory)
         {
             _csvReader = csvReader;
             _logger = logger;
@@ -22,30 +24,32 @@ namespace InvoiceImporter.Application
 
         public Task ImportData(string filePath)
         {
-            _logger.Log("Reading CSV file...");
+            _logger.LogInformation("Reading CSV file {FilePath}", filePath);
 
             List<string[]> csvData = _csvReader.ReadCsv(filePath);
 
-            _logger.Log("Importing data from CSV...");
-
+            int imported = 0, skipped = 0;
             foreach (var row in csvData.Skip(1)) // Skip header row
             {
                 var invoiceNumber = row[0];
                 if (_invoiceRepository.InvoiceExists(invoiceNumber))
                 {
-                    _logger.Log($"Invoice {invoiceNumber} already exists. Skipping...");
+                    _logger.LogWarning("Invoice {InvoiceNumber} already exists; skipping", invoiceNumber);
+                    skipped++;
                     continue;
                 }
 
                 var invoice = _invoiceFactory.CreateInvoice(row);
                 _invoiceRepository.AddInvoice(invoice);
-
-                _logger.Log($"Invoice {invoiceNumber} imported.");
+                imported++;
+                _logger.LogDebug("Invoice {InvoiceNumber} queued for import", invoiceNumber);
             }
 
             _invoiceRepository.SaveChanges();
 
-            _logger.Log("Data import completed successfully.");
+            _logger.LogInformation(
+                "Import completed: {Imported} imported, {Skipped} skipped from {FilePath}",
+                imported, skipped, filePath);
 
             return Task.CompletedTask;
         }
