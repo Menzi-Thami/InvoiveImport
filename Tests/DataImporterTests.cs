@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using InvoiceImporter.Application;
 using InvoiceImporter.Domain;
+using Microsoft.Extensions.Logging.Abstractions;
 using Shouldly;
 using Xunit;
 
@@ -21,7 +22,7 @@ namespace InvoiceImporter.Tests
             });
             var repo = new FakeRepository();
 
-            var importer = new DataImporter(csv, new NullLogger(), repo, new PassthroughFactory());
+            var importer = new DataImporter(csv, NullLogger<DataImporter>.Instance, repo, new PassthroughFactory());
 
             await importer.ImportData("any.csv");
 
@@ -41,7 +42,7 @@ namespace InvoiceImporter.Tests
             var repo = new FakeRepository();
             repo.Existing.Add("INV-001");
 
-            var importer = new DataImporter(csv, new NullLogger(), repo, new PassthroughFactory());
+            var importer = new DataImporter(csv, NullLogger<DataImporter>.Instance, repo, new PassthroughFactory());
 
             await importer.ImportData("any.csv");
 
@@ -54,7 +55,7 @@ namespace InvoiceImporter.Tests
         {
             var csv = new ThrowingCsvReader();
 
-            var importer = new DataImporter(csv, new NullLogger(), new FakeRepository(), new PassthroughFactory());
+            var importer = new DataImporter(csv, NullLogger<DataImporter>.Instance, new FakeRepository(), new PassthroughFactory());
 
             await Should.ThrowAsync<InvalidOperationException>(() => importer.ImportData("any.csv"));
         }
@@ -90,11 +91,5 @@ namespace InvoiceImporter.Tests
             public bool InvoiceExists(string invoiceNumber) => Existing.Contains(invoiceNumber);
             public void AddInvoice(InvoiceHeader invoice) => Added.Add(invoice);
             public void SaveChanges() => SaveChangesCallCount++;
-        }
-
-        private sealed class NullLogger : ILogger
-        {
-            public void Log(string message) { }
-        }
-    }
+        }    }
 }

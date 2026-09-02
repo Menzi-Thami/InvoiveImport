@@ -1,5 +1,4 @@
-using System;
-using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using InvoiceImporter.Application;
 using InvoiceImporter.Domain;
 using InvoiceImporter.Domain.Services;
@@ -14,6 +13,11 @@ namespace InvoiceImporter
     {
         static async Task Main(string[] args)
         {
+            using var loggerFactory = LoggerFactory.Create(builder =>
+                builder.AddSimpleConsole(o => o.SingleLine = true)
+                       .SetMinimumLevel(LogLevel.Information));
+            var logger = loggerFactory.CreateLogger<Program>();
+
             try
             {
                 Console.Write("Enter the file path of the CSV file: ");
@@ -30,19 +34,18 @@ namespace InvoiceImporter
                 using var dbContext = new InvoiceDbContext();
 
                 var csvReader = new CsvReader();
-                var logger = new ConsoleLogger();
                 var repository = new InvoiceRepository(dbContext);
                 var dateTimeParser = new DateTimeParser();
                 var invoiceFactory = new InvoiceFactory(dateTimeParser);
-                var dataImporter = new DataImporter(csvReader, logger, repository, invoiceFactory);
+                var dataImporter = new DataImporter(
+                    csvReader, loggerFactory.CreateLogger<DataImporter>(), repository, invoiceFactory);
 
                 await dataImporter.ImportData(filePath);
             }
             catch (Exception ex)
             {
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine($"An error occurred: {ex.Message}");
-                Console.ResetColor();
+                logger.LogError(ex, "Invoice import failed");
+                Environment.ExitCode = 1;
             }
         }
     }
